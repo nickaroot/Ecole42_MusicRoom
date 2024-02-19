@@ -26,12 +26,10 @@ SECRET_KEY = 'django-insecure-oy-n_x$^i)is-gogi(_qsqf_=j(q8*v7w2e4or2-zr7$j(yj1@
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'https://musicroom.tech',
-    'http://musicroom.tech',
-    'https://www.musicroom.tech',
-    'http://www.musicroom.tech',
-    'https://api.musicroom.tech',
-    'http://api.musicroom.tech'
+    'https://musicroom.nickaroot.me',
+    'http://musicroom.nickaroot.me',
+    'https://cdn.nickaroot.me',
+    'http://cdn.nickaroot.me',
 ]
 
 # Application definition
@@ -183,18 +181,20 @@ DOCS_ROOT = BASE_DIR / 'docs' / 'build' / 'html'
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-AWS_STORAGE_BUCKET_NAME = 'music-room'
+if os.getenv('AWS_S3_ENDPOINT_URL'):
+    AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
+    AWS_S3_USE_SSL=AWS_S3_ENDPOINT_URL.startswith('https')
+
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_S3_REGION_NAME = 'eu-west-3'
-AWS_S3_CUSTOM_DOMAIN = 'cdn.musicroom.tech'
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
+AWS_S3_CUSTOM_DOMAIN = os.getenv('AWS_S3_CUSTOM_DOMAIN')
 AWS_S3_ACCESS_KEY_ID = os.getenv('AWS_S3_ACCESS_KEY_ID')
 AWS_S3_SECRET_ACCESS_KEY = os.getenv('AWS_S3_SECRET_ACCESS_KEY')
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://musicroom.tech',
-    'http://musicroom.tech',
-    'https://www.musicroom.tech',
-    'http://www.musicroom.tech',
-    'https://api.musicroom.tech',
-    'http://api.musicroom.tech'
+    'https://musicroom.nickaroot.me',
+    'http://musicroom.nickaroot.me',
+    'https://cdn.nickaroot.me',
+    'http://cdn.nickaroot.me',
 ]
