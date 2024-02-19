@@ -14,6 +14,8 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_HOST=${DJANGO_DB_HOST}
       - DB_PORT=${DJANGO_DB_PORT}
+      - HOST=${HOST}
+      - CDN_HOST=${CDN_HOST}
       - BACKEND_PORT=${BACKEND_PORT}
       - DEBUG=${DEBUG}
       - SECRET_KEY=${DJANGO_SECRET_KEY}

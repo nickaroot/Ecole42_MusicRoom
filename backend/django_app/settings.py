@@ -26,10 +26,10 @@ SECRET_KEY = 'django-insecure-oy-n_x$^i)is-gogi(_qsqf_=j(q8*v7w2e4or2-zr7$j(yj1@
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'https://musicroom.nickaroot.me',
-    'http://musicroom.nickaroot.me',
-    'https://cdn.nickaroot.me',
-    'http://cdn.nickaroot.me',
+    'https://' + os.getenv('HOST'),
+    'http://' + os.getenv('HOST'),
+    'https://' + os.getenv('CDN_HOST'),
+    'http://' + os.getenv('CDN_HOST'),
 ]
 
 # Application definition
@@ -193,8 +193,8 @@ AWS_S3_ACCESS_KEY_ID = os.getenv('AWS_S3_ACCESS_KEY_ID')
 AWS_S3_SECRET_ACCESS_KEY = os.getenv('AWS_S3_SECRET_ACCESS_KEY')
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://musicroom.nickaroot.me',
-    'http://musicroom.nickaroot.me',
-    'https://cdn.nickaroot.me',
-    'http://cdn.nickaroot.me',
+    'https://' + os.getenv('HOST'),
+    'http://' + os.getenv('HOST'),
+    'https://' + os.getenv('CDN_HOST'),
+    'http://' + os.getenv('CDN_HOST'),
 ]
