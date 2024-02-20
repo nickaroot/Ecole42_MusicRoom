@@ -3,5 +3,12 @@ location /media {
 }
 
 location /static {
-    root /app;
+    alias /app/static/;
+    include mime.types;
+}
+
+location /static/admin/js/ {
+    alias /app/static/admin/js/;
+    include /etc/nginx/mime.types;
+    default_type application/javascript;
 }
