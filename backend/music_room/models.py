@@ -109,18 +109,23 @@ def file_post_save(instance: TrackFile, created, *args, **kwargs):
         else:
             file_path = instance.file.path
 
-        file_raw_metadata = subprocess.run(['ffmpeg', '-i', file_path, '-f', 'ffmetadata', '-'], capture_output=True, text=True).stdout
-        file_metadata = {}
-        for line in file_raw_metadata.split('\n'):
-            line = line.strip()
-            if line:
-                if '=' in line:
-                    key, value = line.split('=', 1)
-                    file_metadata[key.strip()] = value.strip()
-                else:
-                    file_metadata[line.strip()] = None
+        ffprobe_duration_cmd = [
+            'ffprobe',
+            '-i', file_path,
+            '-show_entries', 'format=duration',
+            '-v', 'quiet',
+            '-of', 'csv=p=0'
+        ]
+        ffprobe_duration_process = subprocess.Popen(ffprobe_duration_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ffprobe_duration_output, ffprobe_duration_error = ffprobe_duration_process.communicate()
 
-        instance.duration = file_metadata['length']
+        if ffprobe_duration_error:
+            print("Can't get duration:", error.decode('utf-8'))
+            return
+        
+        file_duration = float(ffprobe_duration_output.decode('utf-8').strip())
+
+        instance.duration = file_duration
         instance.extension = file_extension
         instance.save()
 
@@ -136,11 +141,26 @@ def file_post_save(instance: TrackFile, created, *args, **kwargs):
         )
 
         if export_not_exist:
-            converted_mp3 = ContentFile(subprocess.Popen(['ffmpeg', '-i', file_path, '-b:a', '320K', '-vn', '-f', 'mp3', '-'], stdout=subprocess.PIPE).stdout.read())
-            if AWS_S3_CUSTOM_DOMAIN:
-                default_storage.save(mp3_name, converted_mp3)
+            ffmpeg_mp3_cmd = [
+                'ffmpeg',
+                '-hide_banner',
+                '-loglevel', 'error',
+                '-i', file_path,
+                '-b:a', '320K',
+                '-vn',
+                '-f', 'mp3',
+                '-'
+            ]
+            ffmpeg_mp3_process = subprocess.Popen(ffmpeg_mp3_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            ffmpeg_mp3_output, ffmpeg_mp3_error = ffmpeg_mp3_process.communicate()
+            if ffmpeg_mp3_error:
+                print("Can't create MP3 file:", ffmpeg_mp3_error.decode('utf-8'))
             else:
-                default_storage.save(mp3_path, converted_mp3)
+                ffmpeg_mp3_content = ContentFile(ffmpeg_mp3_output)
+                if AWS_S3_CUSTOM_DOMAIN:
+                    default_storage.save(mp3_name, ffmpeg_mp3_content)
+                else:
+                    default_storage.save(mp3_path, ffmpeg_mp3_content)
 
     post_save.connect(file_post_save, sender=TrackFile)
 
