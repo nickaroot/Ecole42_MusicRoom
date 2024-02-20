@@ -87,7 +87,7 @@ public class API {
     // MARK: - Base URL
     
     public var baseURL: URL? {
-        URL(string: "https://musicroom.tech/")
+        URL(string: "https://musicroom.nickaroot.me/")
     }
     
     public init() {

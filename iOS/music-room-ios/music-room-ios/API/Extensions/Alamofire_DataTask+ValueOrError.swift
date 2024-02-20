@@ -11,10 +11,6 @@ extension DataTask {
             throw API.APIError.invalidResponse
         }
         
-        if let s = String(data: data, encoding: .utf8) {
-            print(s)
-        }
-        
         let apiDecoder = API.Decoder()
         
         do {

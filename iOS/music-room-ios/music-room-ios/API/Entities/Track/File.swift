@@ -9,9 +9,9 @@ public struct File: Codable, Identifiable, Hashable {
         case mp3, flac
     }
     
-    public let `extension`: Extension
+    public let `extension`: Extension?
     
-    public let duration: Decimal
+    public let duration: Decimal?
     
     public let track: Int
     

@@ -775,15 +775,13 @@ class ViewModel: ObservableObject {
                 return
             }
             
-            let progressValue = (currentPlayerContent.progress as NSDecimalNumber?)?
-                .doubleValue
+            let progressValue = (currentPlayerContent.progress as NSDecimalNumber?)
             
-            let progressTotal = (currentTrackFile?.duration as NSDecimalNumber?)?
-                .doubleValue
+            let progressTotal = (currentTrackFile?.duration as NSDecimalNumber?)
             
             let trackProgress = TrackProgress(
-                value: progressValue,
-                total: progressTotal
+                value: progressValue?.doubleValue,
+                total: progressTotal?.doubleValue
             )
             
             if oldValue?.sessionTrackID != currentPlayerContent.sessionTrackID {

@@ -72,8 +72,7 @@ struct QueueView: View {
             }
             
             ScrollView(showsIndicators: false) {
-                
-                VStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 12) {
                     ForEach(
                         viewModel.queuedPlayerContent
                     ) {
