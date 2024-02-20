@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import os
 import uuid
+import subprocess
+import json
 from io import FileIO
 from typing import List, Union
-
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from tinytag import TinyTag
-from pydub import AudioSegment
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -18,6 +18,7 @@ from django.dispatch import receiver
 
 from bootstrap.utils import BootstrapMixin
 from django_app.settings import MEDIA_ROOT
+from django_app.settings import AWS_S3_CUSTOM_DOMAIN
 
 
 class User(AbstractUser):
@@ -103,21 +104,29 @@ def file_post_save(instance: TrackFile, created, *args, **kwargs):
     post_save.disconnect(file_post_save, sender=TrackFile)
     if instance.file:
         file_extension = instance.file.name.split('.')[-1]
-        cloud_backend = hasattr(instance.file, 'url')
-        if cloud_backend:
-            file_path = str(MEDIA_ROOT / instance.file.name)
-            try:
-                open(file_path, 'wb').write(default_storage.open(instance.file.name).read())
-            except FileNotFoundError:
-                return
+        if AWS_S3_CUSTOM_DOMAIN:
+            file_path = "https://" + AWS_S3_CUSTOM_DOMAIN + "/" + str(instance.file.name)
         else:
             file_path = instance.file.path
-        track_file_meta = TinyTag.get(file_path)
-        instance.duration = track_file_meta.duration
+
+        file_raw_metadata = subprocess.run(['ffmpeg', '-i', file_path, '-f', 'ffmetadata', '-'], capture_output=True, text=True).stdout
+        file_metadata = {}
+        for line in file_raw_metadata.split('\n'):
+            line = line.strip()
+            if line:
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    file_metadata[key.strip()] = value.strip()
+                else:
+                    file_metadata[line.strip()] = None
+
+        instance.duration = file_metadata['length']
         instance.extension = file_extension
         instance.save()
+
         mp3_path = file_path.replace('.flac', '.mp3')
         mp3_name = instance.file.name.replace('.flac', '.mp3')
+
         _, export_not_exist = TrackFile.objects.get_or_create(
             id=instance.id + 1,
             track=instance.track,
@@ -125,12 +134,14 @@ def file_post_save(instance: TrackFile, created, *args, **kwargs):
             extension=TrackFile.Extensions.mp3,
             file=mp3_name
         )
+
         if export_not_exist:
-            flac_audio = AudioSegment.from_file(file_path, file_extension)
-            flac_audio.export(mp3_path, format='mp3')
-        print('+', mp3_name, 'Exported')
-        if cloud_backend:
-            os.unlink(file_path)
+            converted_mp3 = ContentFile(subprocess.Popen(['ffmpeg', '-i', file_path, '-b:a', '320K', '-vn', '-f', 'mp3', '-'], stdout=subprocess.PIPE).stdout.read())
+            if AWS_S3_CUSTOM_DOMAIN:
+                default_storage.save(mp3_name, converted_mp3)
+            else:
+                default_storage.save(mp3_path, converted_mp3)
+
     post_save.connect(file_post_save, sender=TrackFile)
 
 

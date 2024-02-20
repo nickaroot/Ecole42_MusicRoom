@@ -25,12 +25,21 @@ SECRET_KEY = 'django-insecure-oy-n_x$^i)is-gogi(_qsqf_=j(q8*v7w2e4or2-zr7$j(yj1@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'https://' + os.getenv('HOST'),
-    'http://' + os.getenv('HOST'),
-    'https://' + os.getenv('CDN_HOST'),
-    'http://' + os.getenv('CDN_HOST'),
-]
+HOST = os.getenv('HOST')
+CDN_HOST = os.getenv('CDN_HOST')
+
+if CDN_HOST:
+    ALLOWED_HOSTS = [
+        'https://' + HOST,
+        'http://' + HOST,
+        'https://' + CDN_HOST,
+        'http://' + CDN_HOST,
+    ]
+else:
+    ALLOWED_HOSTS = [
+        'https://' + HOST,
+        'http://' + HOST,
+    ]
 
 # Application definition
 
@@ -192,9 +201,15 @@ AWS_S3_CUSTOM_DOMAIN = os.getenv('AWS_S3_CUSTOM_DOMAIN')
 AWS_S3_ACCESS_KEY_ID = os.getenv('AWS_S3_ACCESS_KEY_ID')
 AWS_S3_SECRET_ACCESS_KEY = os.getenv('AWS_S3_SECRET_ACCESS_KEY')
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://' + os.getenv('HOST'),
-    'http://' + os.getenv('HOST'),
-    'https://' + os.getenv('CDN_HOST'),
-    'http://' + os.getenv('CDN_HOST'),
-]
+if CDN_HOST:
+    CSRF_TRUSTED_ORIGINS = [
+        'https://' + HOST,
+        'http://' + HOST,
+        'https://' + CDN_HOST,
+        'http://' + CDN_HOST,
+    ]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        'https://' + HOST,
+        'http://' + HOST,
+    ]
