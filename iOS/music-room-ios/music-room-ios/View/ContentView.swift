@@ -41,6 +41,8 @@ struct ContentView: View {
         
         // MARK: - Main Layout
         
+        Foreach
+        
         ZStack {
             if let proxyColor = viewModel.artworkProxyPrimaryColor {
                 Rectangle()

@@ -262,6 +262,14 @@ struct AddPlaylistView: View {
                         addPlaylistViewModel.isShowing = false
 
                         addPlaylistViewModel.reset()
+                        
+                        DispatchQueue.main.async {
+                            
+                        }
+                        
+                        URLSession.shared.dataTask(with: <#T##URLRequest#>) { <#Data?#>, <#URLResponse?#>, <#Error?#> in
+                            <#code#>
+                        }
                     }
                 }
             } label: {
