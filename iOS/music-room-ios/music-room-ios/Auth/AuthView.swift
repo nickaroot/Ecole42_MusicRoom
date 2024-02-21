@@ -85,6 +85,7 @@ struct AuthView: View {
                     
                 }
                 .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .tint(.pink)
             }
 

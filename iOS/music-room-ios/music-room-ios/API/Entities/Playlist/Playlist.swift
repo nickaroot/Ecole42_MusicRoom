@@ -62,7 +62,7 @@ public struct Playlist: Codable, Identifiable, Equatable {
     
     var cover: UIImage {
         generateImage(
-            CGSize(width: 1000, height: 1000),
+            CGSize(width: 60, height: 60),
             rotatedContext: { contextSize, context in
 
                 context.clear(CGRect(origin: CGPoint(), size: contextSize))

@@ -137,6 +137,7 @@ struct ContentView: View {
                     focusedField: $focusedField
                 )
                     .environmentObject(viewModel)
+                    .environmentObject(playlistViewModel)
                     .environmentObject(addPlaylistViewModel)
             }
         )

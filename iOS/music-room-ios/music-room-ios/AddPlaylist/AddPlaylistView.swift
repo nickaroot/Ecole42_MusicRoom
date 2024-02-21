@@ -7,6 +7,9 @@ struct AddPlaylistView: View {
     var viewModel: ViewModel
     
     @EnvironmentObject
+    var playlistViewModel: PlaylistViewModel
+    
+    @EnvironmentObject
     var addPlaylistViewModel: AddPlaylistViewModel
     
     var focusedField: FocusState<Field?>.Binding
@@ -124,12 +127,13 @@ struct AddPlaylistView: View {
                             do {
                                 await MainActor.run {
                                     addPlaylistViewModel.isLoading = true
-
+                                    
                                     addPlaylistViewModel.cancellable = viewModel.$ownPlaylists.sink {
                                         guard
-                                            let playlistID = $0.first(where: {
+                                            let playlist = $0.first(where: {
                                                 $0.name == playlistUUID.description
-                                            })?.id
+                                            }),
+                                            let playlistID = playlist.id
                                         else {
                                             return
                                         }
@@ -137,6 +141,8 @@ struct AddPlaylistView: View {
                                         addPlaylistViewModel.cancellable = nil
 
                                         Task {
+                                            viewModel.subscribeToPlaylist(playlistID: playlistID)
+                                            
                                             guard
                                                 let playlistWebSocket = viewModel.playlistWebSocket
                                             else {
@@ -168,7 +174,7 @@ struct AddPlaylistView: View {
                                                     )
                                                 )
                                             )
-
+                                            
                                             do {
                                                 try await viewModel.updatePlaylists()
                                                 try await viewModel.updateOwnPlaylists()
@@ -187,11 +193,15 @@ struct AddPlaylistView: View {
                                                 viewModel.toastTitle = "Playlist Added"
                                                 viewModel.toastSubtitle = playlistName
                                                 viewModel.isToastShowing = true
+                                                
+                                                playlistViewModel.selectedPlaylist = viewModel.ownPlaylists.first(where: {
+                                                    $0.id == playlistID
+                                                })
                                             }
                                         }
                                     }
                                 }
-
+                                
                                 try await playlistsWebSocket.send(
                                     PlaylistsMessage(
                                         event: .addPlaylist,
@@ -201,6 +211,11 @@ struct AddPlaylistView: View {
                                         )
                                     )
                                 )
+                                
+                                do {
+                                    try await viewModel.updatePlaylists()
+                                    try await viewModel.updateOwnPlaylists()
+                                }
                             } catch {
                                 await MainActor.run {
                                     addPlaylistViewModel.isLoading = false

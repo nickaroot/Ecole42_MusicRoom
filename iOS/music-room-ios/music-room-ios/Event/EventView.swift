@@ -137,11 +137,12 @@ struct EventView: View {
                     
                     eventViewModel.isShowing = false
                 } label: {
-                    Label("Connect", systemImage: "party.popper.fill")
+                    Label("Connect", systemImage: "link")
                         .frame(maxWidth: .infinity)
                 }
                 .tint(.pink)
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .disabled(!eventViewModel.isInProgress)
             }
             .padding(.horizontal, 16)

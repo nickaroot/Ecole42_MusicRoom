@@ -16,10 +16,13 @@ struct ProgressSlider: View {
     var isTracking: Bool
     
     @Binding
+    var isLoadingProgress: Bool
+    
+    @Binding
     var initialValue: Double?
     
     @Binding
-    var shouldAnimatePadding: Bool
+    var animatingPadding: Bool
     
     var body: some View {
         GeometryReader { geometry in
@@ -46,7 +49,7 @@ struct ProgressSlider: View {
             .frame(height: isTracking ? 8 : 4)
             .cornerRadius(isTracking ? 4 : 2)
             .padding(.vertical, isTracking ? 0 : 2)
-            .animation(.easeIn(duration: 0.18), value: shouldAnimatePadding)
+            .animation(.easeIn(duration: 0.18), value: animatingPadding)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { gesture in
@@ -66,9 +69,6 @@ struct ProgressSlider: View {
                         let trackProgressPercentage = value / total
                         let translationPercentage = gesture.translation.width / geometry.size.width
                         
-                        debugPrint(value, total, gesture.translation.width, geometry.size.width)
-                        print("\n\n")
-                        
                         let percentage = max(
                             0,
                             min(
@@ -79,11 +79,13 @@ struct ProgressSlider: View {
                         
                         trackProgress = ViewModel.TrackProgress(
                             value: total * percentage,
-                            total: total
+                            total: total,
+                            buffers: trackProgress.buffers
                         )
                     }
                     .onEnded { gesture in
                         isTracking = false
+                        isLoadingProgress = true
                         initialValue = nil
                         
                         guard
@@ -107,7 +109,8 @@ struct ProgressSlider: View {
                         
                         trackProgress = ViewModel.TrackProgress(
                             value: total * percentage,
-                            total: total
+                            total: total,
+                            buffers: trackProgress.buffers
                         )
                     }
             )

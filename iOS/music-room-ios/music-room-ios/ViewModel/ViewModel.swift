@@ -267,14 +267,14 @@ class ViewModel: ObservableObject {
         .withRenderingMode(.alwaysOriginal) ?? UIImage()
     
     let placeholderCoverImage = generateImage(
-        CGSize(width: 1000, height: 1000),
+        CGSize(width: 60, height: 60),
         rotatedContext: { size, context in
             
             context.clear(CGRect(origin: CGPoint(), size: size))
             
             let musicNoteIcon = UIImage(systemName: "music.note.list")?
                 .withConfiguration(UIImage.SymbolConfiguration(
-                    pointSize: 1000 * 0.375,
+                    pointSize: 60 * 0.375,
                     weight: .medium
                 ))
             ?? UIImage()
@@ -304,6 +304,13 @@ class ViewModel: ObservableObject {
         
         let total: Double?
         
+        struct Buffer: Equatable {
+            let start: Double
+            let duration: Double
+        }
+        
+        let buffers: [Buffer]?
+        
         var remaining: Double? {
             guard
                 let value = value,
@@ -317,7 +324,7 @@ class ViewModel: ObservableObject {
     }
     
     @Published
-    var trackProgress = TrackProgress(value: nil, total: nil) {
+    var trackProgress = TrackProgress(value: nil, total: nil, buffers: nil) {
         didSet {
             if Int(trackProgress.value ?? 0) != Int(oldValue.value ?? 0) {
                 updateNowPlayingElapsedPlaybackTime(trackProgress.value)
@@ -326,16 +333,21 @@ class ViewModel: ObservableObject {
     }
     
     @Published
-    var shouldAnimateProgressSlider = false
+    var animatingProgressSlider = false
     
     @Published
-    var isProgressTracking = false {
+    var isLoadingProgress = false {
         didSet {
-            shouldAnimateProgressPadding.toggle()
-            
-            guard oldValue, !isProgressTracking else { return }
+            guard isLoadingProgress else { return }
             
             seek()
+        }
+    }
+    
+    @Published
+    var isTrackingProgress = false {
+        didSet {
+            animatingProgressPadding.toggle()
         }
     }
     
@@ -356,12 +368,11 @@ class ViewModel: ObservableObject {
         let timeScale = CMTimeScale(1)
         let time = CMTime(seconds: progress, preferredTimescale: timeScale)
         
-        player.seek(to: time) { [unowned self] (status) in
-            guard status else { return /* seek() */ } // FIXME
+        player.seek(to: time) { [weak self] (isSeeked) in
+            guard let self else { return }
+//            guard isSeeked else { return /* seek() */ } // FIXME
             
-            if playerState == .playing {
-                player.play()
-            }
+            isLoadingProgress = false
         }
     }
     
@@ -369,7 +380,7 @@ class ViewModel: ObservableObject {
     var initialProgressValue: Double?
     
     @Published
-    var shouldAnimateProgressPadding = false
+    var animatingProgressPadding = false
     
     // MARK: - Update Data
     
@@ -779,9 +790,17 @@ class ViewModel: ObservableObject {
             
             let progressTotal = (currentTrackFile?.duration as NSDecimalNumber?)
             
+            let buffers = self.player.currentItem?.loadedTimeRanges.map { timeRange in
+                let startSeconds = timeRange.timeRangeValue.start.seconds
+                let durationSeconds = timeRange.timeRangeValue.duration.seconds
+
+                return TrackProgress.Buffer(start: startSeconds, duration: durationSeconds)
+            }
+            
             let trackProgress = TrackProgress(
                 value: progressValue?.doubleValue,
-                total: progressTotal?.doubleValue
+                total: progressTotal?.doubleValue,
+                buffers: buffers
             )
             
             if oldValue?.sessionTrackID != currentPlayerContent.sessionTrackID {
@@ -1127,7 +1146,11 @@ class ViewModel: ObservableObject {
     }
     
     func subscribeToPlayer() {
-        trackProgress = TrackProgress(value: 0, total: trackProgress.total)
+        trackProgress = TrackProgress(
+            value: 0,
+            total: trackProgress.total,
+            buffers: trackProgress.buffers
+        )
         
         player.pause()
         playerState = .paused
@@ -1228,7 +1251,11 @@ class ViewModel: ObservableObject {
     }
     
     func subscribeToEvent(eventID: Int) {
-        trackProgress = TrackProgress(value: 0, total: trackProgress.total)
+        trackProgress = TrackProgress(
+            value: 0,
+            total: trackProgress.total,
+            buffers: trackProgress.buffers
+        )
         player.pause()
         playerState = .paused
         
@@ -1299,31 +1326,41 @@ class ViewModel: ObservableObject {
             return .success
         }
         
-        MPRemoteCommandCenter.shared().previousTrackCommand.addTarget { event in
-            Task {
-                try await self.backward()
+        MPRemoteCommandCenter.shared()
+            .previousTrackCommand.addTarget { event in
+                Task.detached {
+                    try await self.backward()
+                }
+                
+                return .success
             }
-            
-            return .success
-        }
         
-        MPRemoteCommandCenter.shared().changePlaybackPositionCommand.isEnabled = true
+        MPRemoteCommandCenter.shared()
+            .changePlaybackPositionCommand.isEnabled = true
         
-        MPRemoteCommandCenter.shared().changePlaybackPositionCommand.addTarget { event in
-            guard
-                let changePlaybackPositionEvent = event as? MPChangePlaybackPositionCommandEvent
-            else {
-                return .commandFailed
+        MPRemoteCommandCenter.shared()
+            .changePlaybackPositionCommand.addTarget { [weak self] event in
+                guard
+                    let self,
+                    let changePlaybackPositionEvent = event as? MPChangePlaybackPositionCommandEvent
+                else {
+                    return .commandFailed
+                }
+                
+                let time = changePlaybackPositionEvent.positionTime
+                
+                isLoadingProgress = true
+                
+                trackProgress = TrackProgress(
+                    value: time,
+                    total: self.trackProgress.total,
+                    buffers: self.trackProgress.buffers
+                )
+                
+                seek()
+                
+                return .success
             }
-            
-            let time = changePlaybackPositionEvent.positionTime
-            
-            self.trackProgress = TrackProgress(value: time, total: self.trackProgress.total)
-            
-            self.seek()
-            
-            return .success
-        }
         
         return player
     }()

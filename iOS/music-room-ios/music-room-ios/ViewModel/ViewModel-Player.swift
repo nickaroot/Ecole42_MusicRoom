@@ -70,8 +70,16 @@ extension ViewModel {
                 
                 @MainActor
                 func seek() {
+                    var currentSessionTrackProgress: Decimal? {
+                        if let progress = trackProgress.value {
+                            return Decimal(progress)
+                        }
+                        
+                        return currentPlayerContent?.progress
+                    }
+                    
                     guard
-                        let currentSessionTrackProgress = currentPlayerContent?.progress
+                        let currentSessionTrackProgress
                     else {
                         return player.play()
                     }
@@ -120,18 +128,24 @@ extension ViewModel {
             let value = cmTime.seconds
             let total = (self.currentTrackFile?.duration as? NSDecimalNumber)
 
-            let bufferedRanges: [(start: Double, duration: Double)] = self.player.currentItem?.loadedTimeRanges.map { timeRange in
+            let buffers = self.player.currentItem?.loadedTimeRanges.map { timeRange in
                 let startSeconds = timeRange.timeRangeValue.start.seconds
                 let durationSeconds = timeRange.timeRangeValue.duration.seconds
 
-                return (start: startSeconds, duration: durationSeconds)
-            } ?? []
+                return TrackProgress.Buffer(start: startSeconds, duration: durationSeconds)
+            }
 
-            if !self.isProgressTracking {
-                DispatchQueue.main.async { [weak self] in
-                    self?.shouldAnimateProgressSlider.toggle()
+            if !isTrackingProgress, !isLoadingProgress {
+                Task.detached { @MainActor [weak self] in
+                    guard let self else { return }
+                    
+                    animatingProgressSlider.toggle()
 
-                    self?.trackProgress = TrackProgress(value: value, total: total?.doubleValue)
+                    trackProgress = TrackProgress(
+                        value: value,
+                        total: total?.doubleValue,
+                        buffers: buffers
+                    )
                 }
             }
 
@@ -165,7 +179,7 @@ extension ViewModel {
                 let value = cmTime.seconds
                 
                 guard
-                    !self.isProgressTracking
+                    !self.isTrackingProgress
                 else {
                     return
                 }

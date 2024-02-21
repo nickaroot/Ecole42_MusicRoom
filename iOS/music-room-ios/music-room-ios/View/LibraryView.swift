@@ -145,7 +145,7 @@ struct LibraryView: View {
                                 
                                 viewModel.subscribeToPlaylist(playlistID: playlistID)
                             } label: {
-                                LazyHStack(alignment: .center, spacing: 16) {
+                                HStack(alignment: .center, spacing: 16) {
                                     Image(uiImage: playlist.cover)
                                         .resizable()
                                         .cornerRadius(4)
@@ -155,10 +155,12 @@ struct LibraryView: View {
                                         Text(playlist.name)
                                             .foregroundColor(viewModel.primaryControlsColor)
                                             .font(.system(size: 18, weight: .medium))
+                                            .multilineTextAlignment(.leading)
                                         
                                         Text(playlist.accessType.description)
                                             .foregroundColor(viewModel.secondaryControlsColor)
                                             .font(.system(size: 16, weight: .regular))
+                                            .multilineTextAlignment(.leading)
                                     }
                                     
                                     Spacer()
@@ -194,16 +196,19 @@ struct LibraryView: View {
                                         Text(playlist.name)
                                             .foregroundColor(viewModel.primaryControlsColor)
                                             .font(.system(size: 18, weight: .medium))
+                                            .multilineTextAlignment(.leading)
                                         
                                         if let user = viewModel.user(byID: playlist.author) {
                                             Text("@\(user.username)")
                                                 .foregroundColor(viewModel.secondaryControlsColor)
                                                 .font(.system(size: 16, weight: .regular))
+                                                .multilineTextAlignment(.leading)
                                         } else if viewModel.ownPlaylists
                                             .contains(where: { $0.id == playlist.id }) {
                                             Text("Yours")
                                                 .foregroundColor(viewModel.secondaryControlsColor)
                                                 .font(.system(size: 16, weight: .regular))
+                                                .multilineTextAlignment(.leading)
                                         }
                                     }
                                     
@@ -238,16 +243,19 @@ struct LibraryView: View {
                                         Text(event.name)
                                             .foregroundColor(viewModel.primaryControlsColor)
                                             .font(.system(size: 18, weight: .medium))
+                                            .multilineTextAlignment(.leading)
                                         
                                         if let user = viewModel.user(byID: event.author) {
                                             Text("@\(user.username)")
                                                 .foregroundColor(viewModel.secondaryControlsColor)
                                                 .font(.system(size: 16, weight: .regular))
+                                                .multilineTextAlignment(.leading)
                                         } else if viewModel.ownPlaylists
                                             .contains(where: { $0.id == event.id }) {
                                             Text("Yours")
                                                 .foregroundColor(viewModel.secondaryControlsColor)
                                                 .font(.system(size: 16, weight: .regular))
+                                                .multilineTextAlignment(.leading)
                                         }
                                     }
                                     

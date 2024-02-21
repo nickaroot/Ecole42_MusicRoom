@@ -8,12 +8,11 @@ struct PlayerView: View {
     
     var body: some View {
         
-//                    VStack(alignment: .leading, spacing: 64) {
         HStack(alignment: .bottom) {
             GeometryReader { geometry in
-//                                VStack {
-//                                    Spacer()
-                
+                HStack {
+                    Spacer(minLength: 0)
+                    
                     viewModel.artworkImage(
                         viewModel.currentPlayerContent?.name,
                         geometry: geometry
@@ -22,7 +21,9 @@ struct PlayerView: View {
                     .aspectRatio(1, contentMode: .fit)
                     .cornerRadius(8)
                     .shadow(color: Color(white: 0, opacity: 0.3), radius: 8, x: 0, y: 8)
-//                                }
+                    
+                    Spacer(minLength: 0)
+                }
             }
         }
             .scaleEffect(
@@ -176,15 +177,16 @@ struct PlayerView: View {
             VStack(spacing: 8) {
                 ProgressSlider(
                     trackProgress: $viewModel.trackProgress,
-                    isTracking: $viewModel.isProgressTracking,
+                    isTracking: $viewModel.isTrackingProgress,
+                    isLoadingProgress: $viewModel.isLoadingProgress,
                     initialValue: $viewModel.initialProgressValue,
-                    shouldAnimatePadding: $viewModel.shouldAnimateProgressPadding
+                    animatingPadding: $viewModel.animatingProgressPadding
                 )
                     .frame(height: 8)
                     .accentColor(viewModel.primaryControlsColor)
                     .animation(
                         .linear(duration: 1),
-                        value: viewModel.shouldAnimateProgressSlider
+                        value: viewModel.animatingProgressSlider
                     )
                 
                 HStack {
@@ -203,6 +205,5 @@ struct PlayerView: View {
             .move(edge: .top)
             .combined(with: .opacity)
         )
-//                    }
     }
 }

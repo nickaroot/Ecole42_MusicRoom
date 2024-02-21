@@ -133,10 +133,12 @@ extension ViewModel {
         
         artworkProxyPrimaryColor = nil
         
-        DispatchQueue.main.async { [weak self] in
-            withAnimation(.easeOut(duration: 0.75)) {
-                self?.artworkProxyPrimaryColor = color
-                self?.artworkPrimaryColor = color
+        Task.detached { @MainActor [weak self] in
+            withAnimation(.easeOut(duration: 0.75)) { [weak self] in
+                guard let self else { return }
+                
+                artworkProxyPrimaryColor = color
+                artworkPrimaryColor = color
             }
         }
     }
