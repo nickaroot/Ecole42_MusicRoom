@@ -25,7 +25,14 @@ extension ViewModel {
             return player.play()
         }
         
-        let playerItem = AVPlayerItem(url: currentTrackURL)
+        let urlAsset = AVURLAsset(
+            url: currentTrackURL,
+            options: [
+                AVURLAssetPreferPreciseDurationAndTimingKey: true,
+            ]
+        )
+        
+        let playerItem = AVPlayerItem(asset: urlAsset)
         
         do {
             let audioSession = AVAudioSession.sharedInstance()
@@ -44,7 +51,7 @@ extension ViewModel {
         
         if let progress = currentPlayerContent?.progress {
             let progress = NSDecimalNumber(decimal: progress).doubleValue
-            let timeScale = CMTimeScale(1)
+            let timeScale = CMTimeScale(44100)
             let time = CMTime(seconds: progress, preferredTimescale: timeScale)
             
             guard time < playerItem.duration else { return }
@@ -70,28 +77,30 @@ extension ViewModel {
                 
                 @MainActor
                 func seek() {
-                    var currentSessionTrackProgress: Decimal? {
-                        if let progress = trackProgress.value {
-                            return Decimal(progress)
-                        }
-                        
-                        return currentPlayerContent?.progress
-                    }
-                    
                     guard
-                        let currentSessionTrackProgress
+                        let currentSessionTrackProgress = currentPlayerContent?.progress
                     else {
                         return player.play()
                     }
                     
-                    let progress = NSDecimalNumber(decimal: currentSessionTrackProgress).doubleValue
-                    let timeScale = CMTimeScale(1)
-                    let time = CMTime(seconds: progress, preferredTimescale: timeScale)
-                    
-                    player.seek(to: time) { [unowned self] (status) in
-                        guard status else { return seek() }
+                    Task.detached { [unowned self] in
+                        let progress = NSDecimalNumber(decimal: currentSessionTrackProgress).doubleValue
+                        let timeScale = CMTimeScale(44100)
+                        let time = CMTime(seconds: progress, preferredTimescale: timeScale)
                         
-                        player.play()
+                        let isSeeked = await self.player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+                        
+                        guard
+                            isSeeked
+                        else {
+                            Task.detached { @MainActor [unowned self] in
+                                self.seek()
+                            }
+                            
+                            return
+                        }
+                        
+                        await player.play()
                     }
                 }
                 
@@ -114,7 +123,7 @@ extension ViewModel {
         }
         
         playerProgressTimeObserver = player.addPeriodicTimeObserver(
-            forInterval: CMTime(seconds: 1, preferredTimescale: CMTimeScale(NSEC_PER_SEC)),
+            forInterval: CMTime(seconds: 1, preferredTimescale: CMTimeScale(44100)),
             queue: playerQueue
         ) { [weak self] (cmTime) in
             guard
@@ -127,6 +136,8 @@ extension ViewModel {
             
             let value = cmTime.seconds
             let total = (self.currentTrackFile?.duration as? NSDecimalNumber)
+            
+            self.player.currentItem?.preferredForwardBufferDuration = .infinity
 
             let buffers = self.player.currentItem?.loadedTimeRanges.map { timeRange in
                 let startSeconds = timeRange.timeRangeValue.start.seconds

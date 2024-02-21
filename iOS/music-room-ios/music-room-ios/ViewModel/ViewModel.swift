@@ -365,14 +365,27 @@ class ViewModel: ObservableObject {
             return
         }
         
-        let timeScale = CMTimeScale(1)
-        let time = CMTime(seconds: progress, preferredTimescale: timeScale)
-        
-        player.seek(to: time) { [weak self] (isSeeked) in
-            guard let self else { return }
-//            guard isSeeked else { return /* seek() */ } // FIXME
+        Task.detached { [unowned self] in
+            let timeScale = CMTimeScale(44100)
+            let time = CMTime(seconds: progress, preferredTimescale: timeScale)
             
-            isLoadingProgress = false
+            let isSeeked = await self.player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+            
+            guard
+                isSeeked
+            else {
+//                await self.seek()
+                
+                return
+            }
+            
+            Task.detached { @MainActor [unowned self] in
+                self.isLoadingProgress = false
+                
+                if playerState == .playing {
+                    player.play()
+                }
+            }
         }
     }
     

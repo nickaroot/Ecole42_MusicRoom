@@ -73,7 +73,10 @@ struct ProgressSlider: View {
                     .onChanged { gesture in
                         if !isTracking {
                             isTracking = true
-                            initialValue = trackProgress.value
+                            
+                            if initialValue == nil {
+                                initialValue = trackProgress.value
+                            }
                         }
                         
                         guard
@@ -102,9 +105,11 @@ struct ProgressSlider: View {
                         )
                     }
                     .onEnded { gesture in
-                        isTracking = false
-                        isLoadingProgress = true
-                        initialValue = nil
+                        defer {
+                            isTracking = false
+                            isLoadingProgress = true
+                            initialValue = nil
+                        }
                         
                         guard
                             let value = initialValue,
@@ -114,19 +119,18 @@ struct ProgressSlider: View {
                             return
                         }
                         
-                        let trackProgressPercentage = value / total
                         let translationPercentage = gesture.translation.width / geometry.size.width
                         
-                        let percentage = max(
+                        let newValue = max(
                             0,
                             min(
-                                1,
-                                trackProgressPercentage + translationPercentage
+                                total,
+                                value + (total * translationPercentage).rounded()
                             )
                         )
                         
                         trackProgress = ViewModel.TrackProgress(
-                            value: total * percentage,
+                            value: newValue,
                             total: total,
                             buffers: trackProgress.buffers
                         )
