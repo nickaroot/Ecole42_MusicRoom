@@ -31,7 +31,25 @@ struct ProgressSlider: View {
                     .foregroundColor(.accentColor.opacity(0.3))
                 
                 Rectangle()
-                    .foregroundColor(isTracking ? .accentColor : .accentColor.opacity(0.75))
+                    .foregroundColor(.accentColor.opacity(0.2))
+                    .frame(
+                        width: {
+                            guard
+                                let buffer = trackProgress.buffers?.first,
+                                let total = trackProgress.total,
+                                total != 0
+                            else {
+                                return 0
+                            }
+                            
+                            let lastValue = buffer.start + buffer.duration
+                            
+                            return geometry.size.width * CGFloat(lastValue / total)
+                        }()
+                    )
+                
+                Rectangle()
+                    .foregroundColor(isTracking ? .accentColor : .accentColor.opacity(0.7))
                     .frame(
                         width: {
                             guard
