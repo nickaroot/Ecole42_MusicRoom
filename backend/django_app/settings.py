@@ -27,7 +27,7 @@ DEBUG = True
 
 HOST = os.getenv('HOST', "0.0.0.0")
 CDN_HOST = os.getenv('CDN_HOST')
-ENABLE_S3 = os.getenv('ENABLE_S3', False)
+ENABLE_S3 = bool(int(os.getenv('ENABLE_S3', "0")))
 
 ALLOWED_HOSTS = [
     HOST
