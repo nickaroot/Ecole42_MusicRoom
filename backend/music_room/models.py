@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import os
 import uuid
 import subprocess
-import json
 from io import FileIO
 from typing import List, Union
 from django.core.files.base import ContentFile
@@ -16,8 +14,6 @@ from django.db.models.manager import Manager
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
-from bootstrap.utils import BootstrapMixin
-from django_app.settings import MEDIA_ROOT
 from django_app.settings import AWS_S3_CUSTOM_DOMAIN
 
 
@@ -93,7 +89,7 @@ class TrackFile(models.Model):
     #: Track duration in seconds
     duration: float = models.FloatField(blank=True, null=True)
     #: Track instance
-    track: Track = models.ForeignKey(Track, models.CASCADE, related_name='files')
+    track: Track = models.ForeignKey(Track, models.SET_NULL, null=True, blank=True, related_name='files')
 
     def __str__(self):
         return f'{self.track.name} - {self.extension}'
@@ -120,7 +116,7 @@ def file_post_save(instance: TrackFile, created, *args, **kwargs):
         ffprobe_duration_output, ffprobe_duration_error = ffprobe_duration_process.communicate()
 
         if ffprobe_duration_error:
-            print("Can't get duration:", error.decode('utf-8'))
+            print("Can't get duration:", ffprobe_duration_error.decode('utf-8'))
             return
         
         file_duration = float(ffprobe_duration_output.decode('utf-8').strip())

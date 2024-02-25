@@ -25,21 +25,18 @@ SECRET_KEY = 'django-insecure-oy-n_x$^i)is-gogi(_qsqf_=j(q8*v7w2e4or2-zr7$j(yj1@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-HOST = os.getenv('HOST')
+HOST = os.getenv('HOST', "0.0.0.0")
 CDN_HOST = os.getenv('CDN_HOST')
+ENABLE_S3 = os.getenv('ENABLE_S3', False)
+
+ALLOWED_HOSTS = [
+    HOST
+]
 
 if CDN_HOST:
-    ALLOWED_HOSTS = [
-        'https://' + HOST,
-        'http://' + HOST,
-        'https://' + CDN_HOST,
-        'http://' + CDN_HOST,
-    ]
-else:
-    ALLOWED_HOSTS = [
-        'https://' + HOST,
-        'http://' + HOST,
-    ]
+    ALLOWED_HOSTS.append(
+        CDN_HOST
+    )
 
 # Application definition
 
@@ -146,10 +143,6 @@ CHANNEL_LAYERS = {
 
 AUTH_USER_MODEL = 'music_room.User'
 
-import django_on_heroku
-
-django_on_heroku.settings(locals())
-
 PROJECT_NAME = 'Music Room API'
 
 API_INFO = {
@@ -188,11 +181,12 @@ SIMPLE_JWT = {
 
 DOCS_ROOT = BASE_DIR / 'docs' / 'build' / 'html'
 
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+if ENABLE_S3:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 if os.getenv('AWS_S3_ENDPOINT_URL'):
     AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
-    AWS_S3_USE_SSL=AWS_S3_ENDPOINT_URL.startswith('https')
+    AWS_S3_USE_SSL = AWS_S3_ENDPOINT_URL.startswith('https')
 
 AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_SIGNATURE_VERSION = 's3v4'
@@ -201,15 +195,11 @@ AWS_S3_CUSTOM_DOMAIN = os.getenv('AWS_S3_CUSTOM_DOMAIN')
 AWS_S3_ACCESS_KEY_ID = os.getenv('AWS_S3_ACCESS_KEY_ID')
 AWS_S3_SECRET_ACCESS_KEY = os.getenv('AWS_S3_SECRET_ACCESS_KEY')
 
+CSRF_TRUSTED_ORIGINS = [
+    f'https://{HOST}',
+    f'http://{HOST}',
+]
+
 if CDN_HOST:
-    CSRF_TRUSTED_ORIGINS = [
-        'https://' + HOST,
-        'http://' + HOST,
-        'https://' + CDN_HOST,
-        'http://' + CDN_HOST,
-    ]
-else:
-    CSRF_TRUSTED_ORIGINS = [
-        'https://' + HOST,
-        'http://' + HOST,
-    ]
+    CSRF_TRUSTED_ORIGINS.append(f'https://{CDN_HOST}')
+    CSRF_TRUSTED_ORIGINS.append(f'http://{CDN_HOST}')
