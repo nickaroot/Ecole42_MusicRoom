@@ -128,10 +128,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-INSTALLED_APPS += ['music_room', 'rest_framework', 'bootstrap', 'channels', 'drf_yasg', 'rest_framework_simplejwt']
-
-BOOTSTRAP_ENABLED = True
-BOOTSTRAP_PRUNE = True
+INSTALLED_APPS += ['music_room', 'rest_framework', 'channels', 'drf_yasg', 'rest_framework_simplejwt']
 
 ASGI_APPLICATION = 'django_app.asgi.application'
 
